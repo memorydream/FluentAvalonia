@@ -1,4 +1,4 @@
-﻿using Avalonia.Controls.Primitives;
+using Avalonia.Controls.Primitives;
 using Avalonia.Controls.Templates;
 using Avalonia.Controls;
 using Avalonia.Data;
@@ -52,14 +52,14 @@ namespace FluentAvalonia.UI.Controls
         /// Defines the <see cref="Minimum"/> property
         /// </summary>
         public static readonly DirectProperty<NumberBox, double> MinimumProperty =
-            RangeBase.MinimumProperty.AddOwner<NumberBox>(x => x.Minimum, 
+            RangeBase.MinimumProperty.AddOwner<NumberBox>(x => x.Minimum,
                 (x, v) => x.Minimum = v);
 
         /// <summary>
         /// Defines the <see cref="Maximum"/> property
         /// </summary>
         public static readonly DirectProperty<NumberBox, double> MaximumProperty =
-            RangeBase.MaximumProperty.AddOwner<NumberBox>(x => x.Maximum, 
+            RangeBase.MaximumProperty.AddOwner<NumberBox>(x => x.Maximum,
                 (x, v) => x.Maximum = v);
 
         //Skip NumberFormatter
@@ -123,7 +123,7 @@ namespace FluentAvalonia.UI.Controls
         /// </summary>
         public static readonly DirectProperty<NumberBox, double> ValueProperty =
              RangeBase.ValueProperty.AddOwnerWithDataValidation<NumberBox>(x => x.Value,
-                 (x,v) => x.Value = v, defaultBindingMode: BindingMode.TwoWay, enableDataValidation: true);
+                 (x, v) => x.Value = v, defaultBindingMode: BindingMode.TwoWay, enableDataValidation: true);
 
         //Skip InputScope
 
@@ -139,6 +139,9 @@ namespace FluentAvalonia.UI.Controls
         public static readonly DirectProperty<NumberBox, string> SimpleNumberFormatProperty =
             AvaloniaProperty.RegisterDirect<NumberBox, string>(nameof(SimpleNumberFormat),
                 x => x.SimpleNumberFormat, (x, v) => x.SimpleNumberFormat = v);
+
+        public static readonly StyledProperty<bool> IsClampEmptyValueProperty =
+            AvaloniaProperty.Register<NumberBox, bool>(nameof(IsClampEmptyValue), false);
 
         /// <summary>
         /// Toggles whether the control will accept and evaluate a basic formulaic expression entered as input.
@@ -369,11 +372,21 @@ namespace FluentAvalonia.UI.Controls
             {
                 if (!double.IsNaN(value) || !double.IsNaN(_value))
                 {
+                    var vc = value;
                     var old = _value;
+                    var textIsEmpty = string.IsNullOrEmpty(_textBox?.Text);
                     value = CoerceValueToRange(value);
                     if (SetAndRaise(ValueProperty, ref _value, value))
                     {
                         OnValueChanged(old, value);
+                        if (_textBox != null && textIsEmpty)
+                        {
+                            _textBox.Text = string.Empty;
+                        }
+                    }
+                    else if (!(textIsEmpty && Minimum != 0) && vc != value)
+                    {
+                        UpdateTextToValue();
                     }
                 }
             }
@@ -386,6 +399,12 @@ namespace FluentAvalonia.UI.Controls
         {
             get => GetValue(TextAlignmentProperty);
             set => SetValue(TextAlignmentProperty, value);
+        }
+
+        public bool IsClampEmptyValue
+        {
+            get => GetValue(IsClampEmptyValueProperty);
+            set => SetValue(IsClampEmptyValueProperty, value);
         }
 
         /// <summary>
